@@ -92,7 +92,32 @@ def q2():
 
 
 ########## Question 3 ##############
+
+
 blockchain = []
+
+
+def merkleHash(transactions):
+    hashed_transactions = []
+    for transaction in transactions:
+        transaction_message = ""
+        for x in transaction:
+            transaction_message = transaction_message + str(transaction[x])
+        hashed_transaction = hashlib.sha256(transaction_message.encode('utf-8')).hexdigest()
+        hashed_transactions.append(hashed_transaction)
+    while len(hashed_transactions) != 1:
+        new_hashed_transactions = [] 
+        for i in range(1,len(hashed_transactions),2):
+            concated_hashes = hashed_transactions[i-1] + hashed_transactions[i]
+            new_hashed_transaction = hashlib.sha256(concated_hashes.encode('utf-8')).hexdigest()
+            new_hashed_transactions.append(new_hashed_transaction)
+            if i + 2 == len(hashed_transactions):
+                new_hashed_transactions.append(hashed_transactions[-1])
+        hashed_transactions = new_hashed_transactions.copy()
+    return hashed_transactions[0]
+#print(merkleHash([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")]))
+
+	
 def createBlock(transactions,previous_Hash,nonce):
     block_Id = len(blockchain)
     timestamp = int(time.time())
@@ -102,7 +127,6 @@ def createBlock(transactions,previous_Hash,nonce):
     hex_timestamp = hex(timestamp)
     hex_transaction_count = hex(transaction_count)
     hex_nonce = hex(nonce)
-
     print(block_Id,timestamp,transaction_count,previous_Hash,nonce,transactions)
     print(hex_block_ID,hex_timestamp,hex_transaction_count,hex_nonce)
 '''
@@ -117,4 +141,4 @@ def createBlock(transactions,previous_Hash,nonce):
     }
     blockchain.append(block)'''
 
-createBlock([{"a":'lol'}],11221,121111)
+#createBlock([{"a":'lol'}],11221,121111)
