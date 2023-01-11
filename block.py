@@ -2,6 +2,7 @@ import numpy as np
 import webbrowser
 import time
 import hashlib
+import json
 
 
 def q2():
@@ -162,7 +163,8 @@ def createBlock(transactions,previous_Hash,nonce):
         "hash": block_Hash
     }
     blockchain.append(block)
-
-createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],'',121111)
-createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],blockchain[-1].get('hash'),121111)
+    return block
+#Genisis block
+genisis = createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],'',121111)
+second_block = createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],blockchain[-1].get('hash'),121111)
 print(blockchain)
