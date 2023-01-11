@@ -2,7 +2,7 @@ import numpy as np
 import webbrowser
 import time
 import hashlib
-import json
+import random
 
 
 def q2():
@@ -128,8 +128,12 @@ def littleEndian(hex):
     if new_hex[-1] == 'x':
         new_hex = new_hex[:-2]
     return new_hex
-
-def createBlock(transactions,previous_Hash,nonce):
+def makeTarget(leading_zeros):
+    f = (32-leading_zeros) * 'f'
+    f = '0x' + f[:].zfill(32)
+    return f
+easy = makeTarget(3)
+def createBlock(transactions,previous_Hash,nonce,target):
     # create parameters
     block_Id = len(blockchain)
     timestamp = int(time.time())
@@ -141,6 +145,7 @@ def createBlock(transactions,previous_Hash,nonce):
     hex_timestamp = littleEndian('0x' + hex_timestamp[2:].zfill(8))
     hex_transaction_count = hex(transaction_count)
     hex_transaction_count = littleEndian('0x' + hex_transaction_count[2:].zfill(8))
+    hex_target = littleEndian(target)
     hex_nonce = hex(nonce)
     hex_nonce = littleEndian('0x' + hex_nonce[2:].zfill(32))
     # find the merkle hash of the transactions
@@ -148,7 +153,7 @@ def createBlock(transactions,previous_Hash,nonce):
     merkle = littleEndian('0x' + merkle[2:].zfill(32))
     hex_previous_Hash= littleEndian('0x' + previous_Hash[2:].zfill(32))
     #concat all the data
-    concated_strings = hex_block_ID + hex_timestamp +hex_transaction_count+hex_previous_Hash+hex_nonce+merkle
+    concated_strings = hex_block_ID + hex_timestamp +hex_transaction_count+hex_previous_Hash+hex_target+hex_nonce+merkle
     # hash twice the concatenation then put it in littleEndian format
     first_hash = hashlib.sha256(concated_strings.encode('utf-8')).hexdigest()
     block_Hash = littleEndian(hashlib.sha256(first_hash.encode('utf-8')).hexdigest())
@@ -157,6 +162,7 @@ def createBlock(transactions,previous_Hash,nonce):
         "Timestamp" : timestamp,
         "Transaction count": transaction_count,
         "Previous block hash" : previous_Hash,
+        "Target" : target,
         "Nonce" : nonce,
         "Transaction hash": merkle,
         "Transactions" : transactions,
@@ -165,6 +171,31 @@ def createBlock(transactions,previous_Hash,nonce):
     blockchain.append(block)
     return block
 #Genisis block
-genisis = createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],'',121111)
-second_block = createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],blockchain[-1].get('hash'),121111)
+genisis = createBlock([dict(product="grape",quantity=123)],'',121111,easy)
+second_block = createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],blockchain[-1].get('hash'),121111,makeTarget(5))
+#print(blockchain)
+
+
+########### Question 4 ###########
+def find_valid_nonce(target):
+    target = int(target,0)
+    start = time.time()
+    current_nonce = int(makeTarget(0),0)
+    max_nonce = current_nonce
+    brute_force_attempts = 0
+    while target < current_nonce:
+        now = time.time()
+        if now - start > 3600:
+            return False
+        current_nonce = random.randint(0,max_nonce)
+        brute_force_attempts += 1
+    finish = time.time()
+    timed = finish - start
+    return current_nonce, timed , brute_force_attempts
+difficulty = 7
+target = makeTarget(difficulty)
+transactions = [dict(by='lol',quantity=10)]
+valid_nonce,timed,brute_force_attempts = find_valid_nonce(target)
+createBlock(transactions,blockchain[-1].get('hash'),valid_nonce,target)
 print(blockchain)
+print(timed,brute_force_attempts)
