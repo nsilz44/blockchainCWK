@@ -1,8 +1,8 @@
 import numpy as np
 import webbrowser
-import json
 import time
 import hashlib
+
 
 def q2():
     file = open('Dapp.html', 'w')
@@ -117,28 +117,52 @@ def merkleHash(transactions):
     return hashed_transactions[0]
 #print(merkleHash([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")]))
 
-	
+def littleEndian(hex):
+    a = hex[-2::-2]
+    b = hex[::-2]
+    new_hex = ''
+    for i in range(0,len(hex)//2):
+        new_hex= new_hex + a[i]
+        new_hex= new_hex + b[i]
+    if new_hex[-1] == 'x':
+        new_hex = new_hex[:-2]
+    return new_hex
+
 def createBlock(transactions,previous_Hash,nonce):
+    # create parameters
     block_Id = len(blockchain)
     timestamp = int(time.time())
     transaction_count = len(transactions)
-    # convert to hex
+    # convert to little endian hex
     hex_block_ID = hex(block_Id)
+    hex_block_ID = littleEndian('0x' + hex_block_ID[2:].zfill(8))
     hex_timestamp = hex(timestamp)
+    hex_timestamp = littleEndian('0x' + hex_timestamp[2:].zfill(8))
     hex_transaction_count = hex(transaction_count)
+    hex_transaction_count = littleEndian('0x' + hex_transaction_count[2:].zfill(8))
     hex_nonce = hex(nonce)
-    print(block_Id,timestamp,transaction_count,previous_Hash,nonce,transactions)
-    print(hex_block_ID,hex_timestamp,hex_transaction_count,hex_nonce)
-'''
+    hex_nonce = littleEndian('0x' + hex_nonce[2:].zfill(32))
+    # find the merkle hash of the transactions
+    merkle = hex(int(merkleHash(transactions),16))
+    merkle = littleEndian('0x' + merkle[2:].zfill(32))
+    hex_previous_Hash= littleEndian('0x' + previous_Hash[2:].zfill(32))
+    #concat all the data
+    concated_strings = hex_block_ID + hex_timestamp +hex_transaction_count+hex_previous_Hash+hex_nonce+merkle
+    # hash twice the concatenation then put it in littleEndian format
+    first_hash = hashlib.sha256(concated_strings.encode('utf-8')).hexdigest()
+    block_Hash = littleEndian(hashlib.sha256(first_hash.encode('utf-8')).hexdigest())
     block = {
         "Block ID" : block_Id,
         "Timestamp" : timestamp,
         "Transaction count": transaction_count,
         "Previous block hash" : previous_Hash,
         "Nonce" : nonce,
-        "Transactions" : transactions
+        "Transaction hash": merkle,
+        "Transactions" : transactions,
         "hash": block_Hash
     }
-    blockchain.append(block)'''
+    blockchain.append(block)
 
-#createBlock([{"a":'lol'}],11221,121111)
+createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],'',121111)
+createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],blockchain[-1].get('hash'),121111)
+print(blockchain)
