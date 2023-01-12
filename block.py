@@ -5,7 +5,11 @@ import hashlib
 import random
 import pandas as pd
 
+############## Question 2 ##########
 
+### TO DO BEFORE RUNNING python parta.py#######
+# git clone https://github.com/coinables/buidljs.git
+# git clone https://github.com/davidshimjs/qrcodejs.git
 def q2():
     file = open('Dapp.html', 'w')
 
@@ -89,7 +93,7 @@ def q2():
     # open html file
     webbrowser.open('Dapp.html')
 
-#q2()
+q2()
 
 
 
@@ -98,6 +102,8 @@ def q2():
 
 blockchain = []
 
+def makeTransaction(by,to,product,quantity,best_before,batchId):
+    return dict(by=by,to=to,product=product,quantity=quantity,bestbefore=best_before,batchId=batchId)
 
 def merkleHash(transactions):
     hashed_transactions = []
@@ -216,6 +222,8 @@ def q4(max_difficulty):
             break
     time_df.to_csv('time.csv')
     attempts_df.to_csv('bruteforce.csv')
-q4(15)    
+#q4(15)    
 #print(blockchain)
 #print(timed,brute_force_attempts)
+
+#def q5():
