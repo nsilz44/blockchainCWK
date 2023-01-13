@@ -190,7 +190,7 @@ def createBlock(transaction_count,transactions,previous_Hash,nonce,target):
 #Genisis block
 transactions = []
 transaction_count = 0
-transaction,transaction_count = makeTransaction('13W2KaWftxT3Gq1Vip31k4KadY9qdnbP96','16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','BlockyCoin',100,'',1,transaction_count)
+transaction,transaction_count = makeTransaction('16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','13W2KaWftxT3Gq1Vip31k4KadY9qdnbP96','BlockyCoin',100,'',1,transaction_count)
 transactions.append(transaction)
 genisis = createBlock(transaction_count,transactions,'',121111,easy)
 #print(blockchain)
@@ -245,18 +245,54 @@ def q4(max_difficulty):
     time_df.to_csv('time.csv')
     attempts_df.to_csv('bruteforce.csv')
 #q4(15)    
-#print(blockchain)
-#print(timed,brute_force_attempts)
+
 
 
 ########## QUESTION 5 ##################
+# LIST OF WALLET ADDRESSES TO USE, PRIVATE KEYS, PSEUDONYMS
+public_wallet= ['13W2KaWftxT3Gq1Vip31k4KadY9qdnbP96' ,'16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','1LAhVpGyjV66rosxJ2rwjpp9kjCA1mUuVc','1FPRF9JMDpCy7bABaEpSjCqavigUZAWs3Z'] 
+private_keys=['Kz51jD9BYq5P9yQhxZTZRFRBRCNRM8eiSZvv69PMqGRs6ByBapHu'  , 'L2jrhrBZrCK3nVChN4y9c1NCogSfA6LBYss9ZhrEywQHymewz2Bf','Kxfj7vC9XMHxHqVvh39W53gcGjiZh75mcTvgUcDhJ3KdNCaUXRLJ','L3kJKL6GLAQzLDtJBfggVAwqnuXwoKLCqDvt9LDeDUdxmUwmZQhh']
+pseudonyms=['A','B','C','D'] 
+
+######## More blocks #################
+time.sleep(5)
+transactions = []
+transaction,transaction_count = makeTransaction('1LAhVpGyjV66rosxJ2rwjpp9kjCA1mUuVc','16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','BlockyCoin',10000,'',1,transaction_count)
+transactions.append(transaction)
+transaction,transaction_count = makeTransaction('1LAhVpGyjV66rosxJ2rwjpp9kjCA1mUuVc','16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','Carrot',20,'12/02/23',3,transaction_count)
+transactions.append(transaction)
+transaction,transaction_count = makeTransaction('1LAhVpGyjV66rosxJ2rwjpp9kjCA1mUuVc','16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','Grape',10,'01/05/23',2,transaction_count)
+transactions.append(transaction)
+block = createBlock(transaction_count,transactions,blockchain[-1].get('hash'),121111,makeTarget(5))
+time.sleep(3)
+transactions = []
+transaction,transaction_count = makeTransaction('1LAhVpGyjV66rosxJ2rwjpp9kjCA1mUuVc','1FPRF9JMDpCy7bABaEpSjCqavigUZAWs3Z','Carrot',20,'12/04/23',4,transaction_count)
+transactions.append(transaction)
+transaction,transaction_count = makeTransaction('1LAhVpGyjV66rosxJ2rwjpp9kjCA1mUuVc','1FPRF9JMDpCy7bABaEpSjCqavigUZAWs3Z','Grape',2000,'01/05/23',2,transaction_count)
+transactions.append(transaction)
+block = createBlock(transaction_count,transactions,blockchain[-1].get('hash'),121111,makeTarget(5))
+def verifyTransaction(transaction):
+    owner = transaction.get('to')
+    index = public_wallet.index(owner)
+    print('Type in your private key to verify its your transaction (hint its ' + private_keys[index] + ')')
+    key = input('')
+    if key == private_keys[index]:
+        print('Congrats this is your transaction')
+    else:
+        verifyTransaction(transaction)
+        print(transaction)
+
 def searchByTransactionId(transaction_Id):
+    start = time.time()
     for block in blockchain:
         if block.get('Transaction count') >= transaction_Id:
             transactions = block.get('Transactions')
             for transaction in transactions:
                 if transaction.get('transactionId') == transaction_Id:
                     print(transaction)
+                    finish = time.time()
+                    print('time taken to trace the transaction ' + str(finish-start) + 's')
+                    verifyTransaction(transaction)
                     break
             break
 def searchByProduct(possible_transactions): 
@@ -298,7 +334,23 @@ def searchBybestbefore(probable_transactions):
                 probable_transactions.append(transaction)
         if len(probable_transactions) == 0:
             print('no bestbefore of that product in the blockchain')
-            searchBybatchId(probable_transactions)
+            searchBybestbefore(probable_transactions)
+    else:
+        couldbe_transactions = probable_transactions 
+    return couldbe_transactions
+
+def searchByQuantity(probable_transactions):
+    print('Type in the quantity')
+    print('Or type in "dk" if you dont know')
+    batchId = input('')
+    if batchId != 'dk':
+        couldbe_transactions = []
+        for transaction in probable_transactions:
+            if transaction.get('quantity') == batchId:
+                probable_transactions.append(transaction)
+        if len(probable_transactions) == 0:
+            print('no quantity of that product in the blockchain')
+            searchByQuantity(probable_transactions)
     else:
         couldbe_transactions = probable_transactions 
     return couldbe_transactions
@@ -327,17 +379,20 @@ def searchByAttributes():
     probable_transactions = searchByProduct(possible_transactions)
     probable_transactions = searchBybatchId(probable_transactions)
     probable_transactions = searchBybestbefore(probable_transactions)
+    start = time.time()
+    print('here are all the possible transactions')
     for transaction in probable_transactions:
         print(transaction)
+    if len(probable_transactions) == 1:
+        finish = time.time()
+        print('time taken to trace the transaction ' + str(finish-start) + 's')
+        verifyTransaction(probable_transactions[0])
+    else:
+        q5(1)
 
             
 #print(blockchain)
 def q5(a):
-# LIST OF WALLET ADDRESSES TO USE, PRIVATE KEYS, PSEUDONYMS
-# 13W2KaWftxT3Gq1Vip31k4KadY9qdnbP96 , Kz51jD9BYq5P9yQhxZTZRFRBRCNRM8eiSZvv69PMqGRs6ByBapHu , A 
-# 16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ , L2jrhrBZrCK3nVChN4y9c1NCogSfA6LBYss9ZhrEywQHymewz2Bf , B 
-# 1LAhVpGyjV66rosxJ2rwjpp9kjCA1mUuVc , Kxfj7vC9XMHxHqVvh39W53gcGjiZh75mcTvgUcDhJ3KdNCaUXRLJ , C 
-# 1FPRF9JMDpCy7bABaEpSjCqavigUZAWs3Z , L3kJKL6GLAQzLDtJBfggVAwqnuXwoKLCqDvt9LDeDUdxmUwmZQhh , D 
 
     if a == 0:
         print("Here is the way to search and verify transactions")
