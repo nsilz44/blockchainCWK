@@ -4,6 +4,7 @@ import time
 import hashlib
 import random
 import pandas as pd
+from datetime import datetime
 
 ############## Question 2 ##########
 
@@ -42,7 +43,11 @@ def q2():
     console.log(accounts)
     var blob = new Blob([accounts],
                     { type: "text/plain;charset=utf-8" })
-    saveAs(blob, "blockchain.txt");                
+    const tag = document.createElement("a");
+    tag.href = URL.createObjectURL(blob);
+    tag.download = "blockchain.txt";
+    tag.click();
+    URL.revokeObjectURL(tag.href);              
         </script>
         <h1>headers</h1>
         <div id="identities">
@@ -93,7 +98,7 @@ def q2():
     # open html file
     webbrowser.open('Dapp.html')
 
-q2()
+#q2()
 
 
 
@@ -102,8 +107,10 @@ q2()
 
 blockchain = []
 
-def makeTransaction(by,to,product,quantity,best_before,batchId):
-    return dict(by=by,to=to,product=product,quantity=quantity,bestbefore=best_before,batchId=batchId)
+def makeTransaction(by,to,product,quantity,best_before,batchId,transaction_count):
+    transaction_count = transaction_count + 1
+    return dict(by=by,to=to,product=product,quantity=quantity,bestbefore=best_before,batchId=batchId,transactionId=transaction_count),transaction_count
+
 
 def merkleHash(transactions):
     hashed_transactions = []
@@ -140,17 +147,18 @@ def makeTarget(leading_zeros):
     f = '0x' + f[:].zfill(32)
     return f
 easy = makeTarget(3)
-def createBlock(transactions,previous_Hash,nonce,target):
+def createBlock(transaction_count,transactions,previous_Hash,nonce,target):
     # create parameters
     block_Id = len(blockchain)
     timestamp = int(time.time())
-    transaction_count = len(transactions)
+    actual_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    transaction_counts = len(transactions)
     # convert to little endian hex
     hex_block_ID = hex(block_Id)
     hex_block_ID = littleEndian('0x' + hex_block_ID[2:].zfill(8))
     hex_timestamp = hex(timestamp)
     hex_timestamp = littleEndian('0x' + hex_timestamp[2:].zfill(8))
-    hex_transaction_count = hex(transaction_count)
+    hex_transaction_count = hex(transaction_counts)
     hex_transaction_count = littleEndian('0x' + hex_transaction_count[2:].zfill(8))
     hex_target = littleEndian(target)
     hex_nonce = hex(nonce)
@@ -167,7 +175,7 @@ def createBlock(transactions,previous_Hash,nonce,target):
     block_Hash = littleEndian(hashlib.sha256(first_hash.encode('utf-8')).hexdigest())
     block = {
         "Block ID" : block_Id,
-        "Timestamp" : timestamp,
+        "Timestamp" : actual_time,
         "Transaction count": transaction_count,
         "Previous block hash" : previous_Hash,
         "Target" : target,
@@ -177,10 +185,24 @@ def createBlock(transactions,previous_Hash,nonce,target):
         "hash": block_Hash
     }
     blockchain.append(block)
+    print('block ' + str(block_Id) + ' created at '+ actual_time)
     return block
 #Genisis block
-genisis = createBlock([dict(product="grape",quantity=123)],'',121111,easy)
-second_block = createBlock([dict(product="grape",lol='123'),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122"),dict(product="carrot",lol="122")],blockchain[-1].get('hash'),121111,makeTarget(5))
+transactions = []
+transaction_count = 0
+transaction,transaction_count = makeTransaction('13W2KaWftxT3Gq1Vip31k4KadY9qdnbP96','16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','BlockyCoin',100,'',1,transaction_count)
+transactions.append(transaction)
+genisis = createBlock(transaction_count,transactions,'',121111,easy)
+#print(blockchain)
+# Second block
+transactions = []
+transaction,transaction_count = makeTransaction('13W2KaWftxT3Gq1Vip31k4KadY9qdnbP96','16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','Carrot',10,'10/02/23',1,transaction_count)
+transactions.append(transaction)
+transaction,transaction_count = makeTransaction('13W2KaWftxT3Gq1Vip31k4KadY9qdnbP96','16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','Carrot',20,'10/02/23',2,transaction_count)
+transactions.append(transaction)
+transaction,transaction_count = makeTransaction('13W2KaWftxT3Gq1Vip31k4KadY9qdnbP96','16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ','Grape',10,'01/02/23',1,transaction_count)
+transactions.append(transaction)
+second_block = createBlock(transaction_count,transactions,blockchain[-1].get('hash'),121111,makeTarget(5))
 #print(blockchain)
 
 
@@ -193,7 +215,7 @@ def find_valid_nonce(target):
     brute_force_attempts = 0
     while target < current_nonce:
         now = time.time()
-        if now - start > 10:
+        if now - start > 3600:
             return current_nonce,'It’s very difficult to find nonce',brute_force_attempts
         current_nonce = random.randint(0,max_nonce)
         brute_force_attempts += 1
@@ -226,4 +248,119 @@ def q4(max_difficulty):
 #print(blockchain)
 #print(timed,brute_force_attempts)
 
-#def q5():
+
+########## QUESTION 5 ##################
+def searchByTransactionId(transaction_Id):
+    for block in blockchain:
+        if block.get('Transaction count') >= transaction_Id:
+            transactions = block.get('Transactions')
+            for transaction in transactions:
+                if transaction.get('transactionId') == transaction_Id:
+                    print(transaction)
+                    break
+            break
+def searchByProduct(possible_transactions): 
+    print('Type in the name of the product e.g "Grape", "Carrot", "BlockyCoin"')
+    product = input('')
+    probable_transactions = []
+    for transaction in possible_transactions:
+        if transaction.get('product') == product:
+            probable_transactions.append(transaction)
+    if len(probable_transactions) == 0:
+        print('no product of that type in blockchain')
+        searchByProduct(possible_transactions) 
+    return probable_transactions
+
+def searchBybatchId(probable_transactions):
+    print('Type in the batchId')
+    print('Or type in "dk" if you dont know')
+    batchId = input('')
+    if batchId != 'dk':
+        couldbe_transactions = []
+        for transaction in probable_transactions:
+            if transaction.get('batchId') == batchId:
+                probable_transactions.append(transaction)
+        if len(probable_transactions) == 0:
+            print('no batchId of that type in the blockchain')
+            searchBybatchId(probable_transactions) 
+    else:
+        couldbe_transactions = probable_transactions
+    return couldbe_transactions
+
+def searchBybestbefore(probable_transactions):
+    print('Type in the best before date in format DD/MM/YY')
+    print('Or type in "dk" if you dont know')
+    batchId = input('')
+    if batchId != 'dk':
+        couldbe_transactions = []
+        for transaction in probable_transactions:
+            if transaction.get('bestbefore') == batchId:
+                probable_transactions.append(transaction)
+        if len(probable_transactions) == 0:
+            print('no bestbefore of that product in the blockchain')
+            searchBybatchId(probable_transactions)
+    else:
+        couldbe_transactions = probable_transactions 
+    return couldbe_transactions
+
+def searchByAttributes():
+    print('Type in the date of transaction in the format "YYYY-MM-DD HH:MM:SS"')
+    print("Or If you dont know type in 'dk'")
+    date = input('')
+    possible_transactions = []
+    if date != 'dk':
+        try: 
+            time.strptime(date, '%Y-%m-%d %H:%M:%S')
+        except:
+            print('wrong format or not a date')
+            searchByAttributes()
+        for block in blockchain:
+            if block.get('Timestamp') == date:
+                transactions = block.get('Transactions')
+                for transaction in transactions:
+                    possible_transactions.append(transaction)
+    else: #'dk'
+        for block in blockchain:
+            transactions = block.get('Transactions')
+            for transaction in transactions:
+                possible_transactions.append(transaction)
+    probable_transactions = searchByProduct(possible_transactions)
+    probable_transactions = searchBybatchId(probable_transactions)
+    probable_transactions = searchBybestbefore(probable_transactions)
+    for transaction in probable_transactions:
+        print(transaction)
+
+            
+#print(blockchain)
+def q5(a):
+# LIST OF WALLET ADDRESSES TO USE, PRIVATE KEYS, PSEUDONYMS
+# 13W2KaWftxT3Gq1Vip31k4KadY9qdnbP96 , Kz51jD9BYq5P9yQhxZTZRFRBRCNRM8eiSZvv69PMqGRs6ByBapHu , A 
+# 16uiTiE6Wwnkzr6sSesAaTUJjSqNDTG2jQ , L2jrhrBZrCK3nVChN4y9c1NCogSfA6LBYss9ZhrEywQHymewz2Bf , B 
+# 1LAhVpGyjV66rosxJ2rwjpp9kjCA1mUuVc , Kxfj7vC9XMHxHqVvh39W53gcGjiZh75mcTvgUcDhJ3KdNCaUXRLJ , C 
+# 1FPRF9JMDpCy7bABaEpSjCqavigUZAWs3Z , L3kJKL6GLAQzLDtJBfggVAwqnuXwoKLCqDvt9LDeDUdxmUwmZQhh , D 
+
+    if a == 0:
+        print("Here is the way to search and verify transactions")
+    print("Type in the transaction ID. If you dont know type 'dk' ")
+    try:
+        transactionID = input('')
+        if transactionID == 'dk':
+            searchByAttributes()
+            q5(0)
+        transactionID = int(transactionID)
+        if transactionID >= transaction_count:
+            print('Too high a number')
+            q5(1)
+        elif transactionID == 0:
+            print('transactionIDs start at 1')
+            q5(1)
+        else:
+            searchByTransactionId(transactionID)    
+    except ValueError:
+        print('Not a whole number, try again')
+        q5(1)
+q5(0)
+
+
+
+        
